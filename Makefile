@@ -24,6 +24,7 @@ help: Makefile
 req:
 	@echo "Installing requirements ..."
 	go get golang.org/x/tools/cmd/goimports
+	go get -u golang.org/x/lint/golint
 
 ## test: 执行代码检查和单元测试
 .PHONY: test

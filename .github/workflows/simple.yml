@@ -11,7 +11,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: Run a one-line script
       run: echo Hello, world!
-    - name: install prerequistites
+    - name: install prerequisites
       run:  |
         wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add -
         source /etc/lsb-release
