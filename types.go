@@ -1,11 +1,11 @@
-package influx
+package goflux
 
 import (
 	"errors"
-
 	influx "github.com/influxdata/influxdb1-client/v2"
 )
 
+//type some type alias
 type (
 	// Tags alias of string/string map for tsdb tags
 	Tags = map[string]string
