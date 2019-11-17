@@ -1,2 +1,2 @@
 # goflux
-a influx client for golang
+an influx client for golang
