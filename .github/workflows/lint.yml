@@ -8,16 +8,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: setup Go
-        uses: actions/setup-go@v1
-        with:
-          go-version: '1.13.3'
       - name: setup path
         run: |
-          export PATH=$PATH:$(go env GOPATH)/bin
+          export GOBIN=$(go env GOPATH)/bin
+          export PATH=$PATH:$GOBIN
           go env
           echo '----'
           echo $PATH
+          go get golang.org/x/lint/golint
       - name: checkout source code
         uses: actions/checkout@v1
       - name: perform lint
