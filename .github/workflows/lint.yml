@@ -16,6 +16,7 @@ jobs:
           echo '----'
           echo $PATH
           go get golang.org/x/lint/golint
+          ls $GOBIN
       - name: checkout source code
         uses: actions/checkout@v1
       - name: perform lint
