@@ -59,15 +59,15 @@ func (c *Client) FetchRecent(name string, duration time.Duration) (*Result, erro
 
 //GetLastPoint get latest point of a measurement
 func (c *Client) GetLastPoint(name string, tags Tags) (*Result, error) {
-	tagsC := ""
+	whereClause := ""
 	for k, v := range tags {
-		c := ""
-		if tagsC != "" {
-			c = " and"
+		if whereClause == "" {
+			whereClause = fmt.Sprintf("where %s = '%s'", k, v)
+		} else {
+			whereClause = fmt.Sprintf("%s and %s = '%s'", whereClause, k, v)
 		}
-		tagsC += fmt.Sprintf("%s %s = '%s'", c, k, v)
 	}
-	cmd := fmt.Sprintf("select last(*) from %s where %s", name, tagsC)
+	cmd := fmt.Sprintf("select * from %s %s order by time desc limit 1", name, whereClause)
 	return c.query(cmd)
 }
 
