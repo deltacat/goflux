@@ -15,6 +15,9 @@ jobs:
       - name: setup path
         run: |
           export PATH=$PATH:$(go env GOPATH)/bin
+          go env
+          echo '----'
+          echo $PATH
       - name: checkout source code
         uses: actions/checkout@v1
       - name: perform lint
