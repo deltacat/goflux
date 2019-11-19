@@ -8,18 +8,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: setup path
-        run: |
-          export GOBIN=$(go env GOPATH)/bin
-          export PATH=$PATH:$GOBIN
-          go env
-          echo '----'
-          echo $PATH
-          go get golang.org/x/lint/golint
-          ls $GOBIN
       - name: checkout source code
         uses: actions/checkout@v1
       - name: perform lint
         run: |
-          go env
-          golint
+          export GOBIN=$(go env GOPATH)/bin
+          export PATH=$PATH:$GOBIN
+          make req lint
