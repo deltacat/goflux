@@ -26,7 +26,7 @@ func addOneSalesData(data simpleData) error {
 		"customers": data.Customers,
 		"sales":     data.Sales,
 	}
-	return client.WriteOne(simpleMeasurement, tags, fields, data.Time)
+	return client.WriteOne(simpleMeasurement, tags, fields, data.Time, "")
 }
 
 func fetchRecentSalesData(duration time.Duration) (*Result, error) {
@@ -88,7 +88,7 @@ func (ts *InfluxTestSuite) TestInsertMultiPoints() {
 			points = append(points, pt)
 		}
 		assert.Equal(10, len(points))
-		assert.NoError(client.WriteAll(points, "", ""))
+		assert.NoError(client.WriteAll(points, ""))
 	})
 
 	ts.T().Run("fetch recent", func(t *testing.T) {

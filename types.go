@@ -17,14 +17,15 @@ type (
 	Result = influx.Result
 )
 
+// Predefined precision strings
 const (
-	rfc3339     = "rfc3339"
-	hour        = "h"
-	minute      = "m"
-	second      = "s"
-	millisecond = "ms"
-	microsecond = "us"
-	nanosecond  = "ns"
+	Rfc3339     = "rfc3339"
+	Hour        = "h"
+	Minute      = "m"
+	Second      = "s"
+	Millisecond = "ms"
+	Microsecond = "us"
+	Nanosecond  = "ns"
 )
 
 // application defined errors

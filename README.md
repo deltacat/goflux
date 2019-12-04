@@ -21,6 +21,7 @@ func Setup() error {
 		"username",
 		"password",
 		"database",
+        "",
 		"precision")
 	if err != nil {
 		return err

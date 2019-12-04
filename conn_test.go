@@ -29,13 +29,14 @@ func (ts *InfluxTestSuite) TearDownTest() {
 
 func TestViaSuite(t *testing.T) {
 	conf := struct {
-		Address, DatabaseName, Precision string
+		Address, DatabaseName, RetentionPolicy, Precision string
 	}{
 		Address:      "http://localhost:8086", // todo: read conn and dbName from env
 		DatabaseName: testDBName,
-		Precision:    microsecond,
+		RetentionPolicy: "",
+		Precision:    Microsecond,
 	}
-	if c, err := CreateClient(conf.Address, "", "", conf.DatabaseName, conf.Precision); err != nil {
+	if c, err := CreateClient(conf.Address, "", "", conf.DatabaseName, conf.RetentionPolicy, conf.Precision); err != nil {
 		panic(err)
 	} else {
 		client = c

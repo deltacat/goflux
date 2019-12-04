@@ -1,4 +1,4 @@
-module github.com/deltacat/goflux
+module goflux
 
 go 1.13
 

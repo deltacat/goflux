@@ -2,6 +2,7 @@ package goflux
 
 import (
 	"fmt"
+
 	_ "github.com/influxdata/influxdb1-client" // this is important because of the bug in go mod
 	influx "github.com/influxdata/influxdb1-client/v2"
 	log "github.com/sirupsen/logrus"
@@ -12,12 +13,13 @@ type (
 	Client struct {
 		cli       influx.Client
 		db        string
+		rp        string
 		precision string
 	}
 )
 
 //CreateClient create an influx client holder
-func CreateClient(addr, user, pass, db, precision string) (*Client, error) {
+func CreateClient(addr, user, pass, db, rp, precision string) (*Client, error) {
 	cli, err := influx.NewHTTPClient(influx.HTTPConfig{
 		Addr:     addr,
 		Username: user,
@@ -29,6 +31,7 @@ func CreateClient(addr, user, pass, db, precision string) (*Client, error) {
 	c := &Client{
 		cli:       cli,
 		db:        db,
+		rp:        rp,
 		precision: precision,
 	}
 	if err := c.CreateDatabase(db, true); err != nil {

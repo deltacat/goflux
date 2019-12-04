@@ -15,7 +15,7 @@ func NewPoint(name string, tags Tags, fields Fields, ts time.Time) (*Point, erro
 }
 
 // WriteOne write one point to measurement <name>
-func (c *Client) WriteOne(name string, tags Tags, fields Fields, ts time.Time) error {
+func (c *Client) WriteOne(name string, tags Tags, fields Fields, ts time.Time, rp string) error {
 	// create a point
 	pt, err := influx.NewPoint(name, tags, fields, ts)
 	if err != nil {
@@ -23,15 +23,16 @@ func (c *Client) WriteOne(name string, tags Tags, fields Fields, ts time.Time) e
 		return err
 	}
 
-	return c.WriteAll([]*Point{pt}, "", "")
+	return c.WriteAll([]*Point{pt}, rp)
 }
 
 // WriteAll write all points at once.
-func (c *Client) WriteAll(pts []*Point, rp string, tp string) error {
+func (c *Client) WriteAll(pts []*Point, rp string) error {
 	// Create a new point batch
 	bp, err := influx.NewBatchPoints(influx.BatchPointsConfig{
-		Database:  c.db,
-		Precision: c.precision,
+		Database:        c.db,
+		Precision:       c.precision,
+		RetentionPolicy: c.rp,
 	})
 	if err != nil {
 		log.WithError(err).Error("new batch point")
@@ -39,9 +40,6 @@ func (c *Client) WriteAll(pts []*Point, rp string, tp string) error {
 	}
 	if rp != "" {
 		bp.SetRetentionPolicy(rp)
-	}
-	if tp != "" {
-		_ = bp.SetPrecision(tp)
 	}
 
 	bp.AddPoints(pts)
@@ -52,8 +50,7 @@ func (c *Client) WriteAll(pts []*Point, rp string, tp string) error {
 
 // FetchRecent fetch recent data in <duration> from measurement <name>
 func (c *Client) FetchRecent(name string, duration time.Duration) (*Result, error) {
-	//cmd := fmt.Sprintf("select * from %s where time > now() - %dns", name, duration)
-	cmd := fmt.Sprintf("select * from %s", name)
+	cmd := fmt.Sprintf("select * from %s where time > now() - %dns", name, duration.Nanoseconds())
 	return c.query(cmd)
 }
 
