@@ -3,23 +3,17 @@ package goflux
 import (
 	"fmt"
 
-	_ "github.com/influxdata/influxdb1-client" // this is important because of the bug in go mod
 	influx "github.com/influxdata/influxdb1-client/v2"
-	log "github.com/sirupsen/logrus"
 )
 
-type (
-	// Client influx client instance and necessary parameters
-	Client struct {
-		cli       influx.Client
-		db        string
-		rp        string
-		precision string
-	}
-)
+// Client influx client instance and necessary parameters
+type Client struct {
+	influx.Client
+	db, rp, pr string // database, retentionPolicy, precision
+}
 
 //CreateClient create an influx client holder
-func CreateClient(addr, user, pass, db, rp, precision string) (*Client, error) {
+func CreateClient(addr, user, pass, db, rp, pr string) (*Client, error) {
 	cli, err := influx.NewHTTPClient(influx.HTTPConfig{
 		Addr:     addr,
 		Username: user,
@@ -29,10 +23,10 @@ func CreateClient(addr, user, pass, db, rp, precision string) (*Client, error) {
 		return nil, err
 	}
 	c := &Client{
-		cli:       cli,
-		db:        db,
-		rp:        rp,
-		precision: precision,
+		Client: cli,
+		db:     db,
+		rp:     rp,
+		pr:     pr,
 	}
 	if err := c.CreateDatabase(db, true); err != nil {
 		return nil, err
@@ -43,7 +37,7 @@ func CreateClient(addr, user, pass, db, rp, precision string) (*Client, error) {
 // CreateDatabase create a Database with a query
 func (c *Client) CreateDatabase(name string, use bool) error {
 	cmd := fmt.Sprintf("CREATE DATABASE %s", name)
-	if _, err := c.query(cmd); err != nil {
+	if _, err := c.queryEx(cmd); err != nil {
 		return err
 	}
 	if use {
@@ -60,17 +54,25 @@ func (c *Client) UseDatabase(name string) {
 // DropDatabase drop a Database with via query
 func (c *Client) DropDatabase(name string) error {
 	cmd := fmt.Sprintf("DROP DATABASE %s", name)
-	if _, err := c.query(cmd); err != nil {
+	if _, err := c.queryEx(cmd); err != nil {
 		return err
 	}
 	return nil
 }
 
-//Close close the influx instance
-func (c *Client) Close() {
-	if c.cli != nil {
-		if err := c.cli.Close(); err != nil {
-			log.WithError(err).Error("close connection")
-		}
+// single command query
+func (c *Client) queryEx(command string) (*Result, error) {
+	q := influx.NewQuery(command, c.db, c.pr)
+	response, err := c.Query(q)
+	if err != nil {
+		return nil, err
 	}
+	if response.Error() != nil {
+		return nil, response.Error()
+	}
+	results := response.Results
+	if len(results) == 0 {
+		return nil, ErrEmptyResults
+	}
+	return &results[0], nil
 }

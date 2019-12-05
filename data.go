@@ -31,7 +31,7 @@ func (c *Client) WriteAll(pts []*Point, rp string) error {
 	// Create a new point batch
 	bp, err := influx.NewBatchPoints(influx.BatchPointsConfig{
 		Database:        c.db,
-		Precision:       c.precision,
+		Precision:       c.pr,
 		RetentionPolicy: c.rp,
 	})
 	if err != nil {
@@ -45,13 +45,13 @@ func (c *Client) WriteAll(pts []*Point, rp string) error {
 	bp.AddPoints(pts)
 
 	// Write the batch
-	return c.cli.Write(bp)
+	return c.Write(bp)
 }
 
 // FetchRecent fetch recent data in <duration> from measurement <name>
 func (c *Client) FetchRecent(name string, duration time.Duration) (*Result, error) {
 	cmd := fmt.Sprintf("select * from %s where time > now() - %dns", name, duration.Nanoseconds())
-	return c.query(cmd)
+	return c.queryEx(cmd)
 }
 
 //GetLastPoint get latest point of a measurement
@@ -65,22 +65,5 @@ func (c *Client) GetLastPoint(name string, tags Tags) (*Result, error) {
 		}
 	}
 	cmd := fmt.Sprintf("select * from %s %s order by time desc limit 1", name, whereClause)
-	return c.query(cmd)
-}
-
-// single command query
-func (c *Client) query(command string) (*Result, error) {
-	q := influx.NewQuery(command, c.db, c.precision)
-	response, err := c.cli.Query(q)
-	if err != nil {
-		return nil, err
-	}
-	if response.Error() != nil {
-		return nil, response.Error()
-	}
-	results := response.Results
-	if len(results) == 0 {
-		return nil, ErrEmptyResults
-	}
-	return &results[0], nil
+	return c.queryEx(cmd)
 }

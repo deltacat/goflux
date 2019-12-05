@@ -1,6 +1,7 @@
 package goflux
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -22,16 +23,18 @@ const (
 
 // RetentionPolicy data struct for retention policy
 type RetentionPolicy struct {
-	name        string
-	duration    string
-	replication int
+	Name               string
+	Duration           string
+	Replication        int64
+	Default            bool
+	ShardGroupDuration string
 }
 
 var allPolicies = []RetentionPolicy{
-	{name: retentionOneWeek, duration: durationOneWeek, replication: 1},
-	{name: retentionOneMonth, duration: durationOneMonth, replication: 1},
-	{name: retentionThreeMonth, duration: durationThreeMonth, replication: 1},
-	{name: retentionOneYear, duration: durationOneYear, replication: 1},
+	{Name: retentionOneWeek, Duration: durationOneWeek, Replication: 1},
+	{Name: retentionOneMonth, Duration: durationOneMonth, Replication: 1},
+	{Name: retentionThreeMonth, Duration: durationThreeMonth, Replication: 1},
+	{Name: retentionOneYear, Duration: durationOneYear, Replication: 1},
 }
 
 // CreateAllRetentionPolicies create all application wanted retention policies
@@ -40,9 +43,9 @@ func (c *Client) CreateAllRetentionPolicies() error {
 }
 
 //GetAllRetentionPolicies get all retention policies
-func (c *Client) GetAllRetentionPolicies() ([][]interface{}, error) {
+func (c *Client) GetAllRetentionPolicies() ([]RetentionPolicy, error) {
 	cmd := fmt.Sprintf("show retention policies")
-	result, err := c.query(cmd)
+	result, err := c.queryEx(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +53,25 @@ func (c *Client) GetAllRetentionPolicies() ([][]interface{}, error) {
 	if len(series) == 0 {
 		return nil, ErrEmptyResults
 	}
-	return series[0].Values, nil
+
+	columns := make(map[string]int)
+	for i, col := range series[0].Columns {
+		columns[col] = i
+	}
+	values := series[0].Values
+	rps := make([]RetentionPolicy, len(values))
+	for i, r := range values {
+		replicaN, _ := r[columns["replicaN"]].(json.Number).Int64()
+		rps[i] = RetentionPolicy{
+			Name:               r[columns["name"]].(string),
+			Duration:           r[columns["duration"]].(string),
+			Replication:        replicaN,
+			Default:            r[columns["default"]].(bool),
+			ShardGroupDuration: r[columns["shardGroupDuration"]].(string),
+		}
+	}
+
+	return rps, nil
 }
 
 //DropAllRetentionPolicies drop all retention policies which created by the app
@@ -61,8 +82,8 @@ func (c *Client) DropAllRetentionPolicies() error {
 }
 
 // CreateRetentionPolicy create a policy
-func (c *Client) CreateRetentionPolicy(name string, duration string, replication int) error {
-	return c.CreateRetentionPolicies([]RetentionPolicy{{name: name, duration: duration, replication: replication}})
+func (c *Client) CreateRetentionPolicy(name string, duration string, replication int64) error {
+	return c.CreateRetentionPolicies([]RetentionPolicy{{Name: name, Duration: duration, Replication: replication}})
 }
 
 // CreateRetentionPolicies create input retention policies
@@ -72,10 +93,34 @@ func (c *Client) CreateRetentionPolicies(rps []RetentionPolicy) error {
 	}
 	cmd := ""
 	for _, rp := range rps {
-		cmd += fmt.Sprintf("create retention policy %s on %s duration %s replication %d; ", rp.name, c.db, rp.duration, rp.replication)
+		cmd += fmt.Sprintf("create retention policy %s on %s duration %s replication %d; ", rp.Name, c.db, rp.Duration, rp.Replication)
 	}
-	_, err := c.query(cmd)
+	_, err := c.queryEx(cmd)
 	return err
+}
+
+//SetDefaultRetentionPolicy change default retention policies
+func (c *Client) SetDefaultRetentionPolicy(name string) error {
+	if name == "" {
+		return nil
+	}
+	cmd := fmt.Sprintf(`alter retention policy "%s" on %s default`, name, c.db)
+	_, err := c.queryEx(cmd)
+	return err
+}
+
+//GetDefaultRPName get default retention policy name
+func (c *Client) GetDefaultRPName() string {
+	results, err := c.GetAllRetentionPolicies()
+	if err != nil {
+		return ""
+	}
+	for _, r := range results {
+		if r.Default {
+			return r.Name
+		}
+	}
+	return ""
 }
 
 //DropRetentionPolicies drop all retention policies which created by the app
@@ -87,9 +132,9 @@ func (c *Client) DropRetentionPolicies(rps []RetentionPolicy) error {
 	}
 	cmd := ""
 	for _, rp := range rps {
-		cmd += fmt.Sprintf("drop retention policy %s on %s;", rp.name, c.db)
+		cmd += fmt.Sprintf("drop retention policy %s on %s;", rp.Name, c.db)
 	}
-	_, err := c.query(cmd)
+	_, err := c.queryEx(cmd)
 	return err
 }
 
@@ -97,6 +142,6 @@ func (c *Client) DropRetentionPolicies(rps []RetentionPolicy) error {
 //DANGER!!! this operation will permanently delete all measurements and data stored in the retention policy
 func (c *Client) DropRetentionPolicy(name string) error {
 	cmd := fmt.Sprintf("drop retention policy %s on %s", name, c.db)
-	_, err := c.query(cmd)
+	_, err := c.queryEx(cmd)
 	return err
 }
