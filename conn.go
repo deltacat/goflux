@@ -41,7 +41,7 @@ func (c *Client) CreateDatabase(name string, use bool) error {
 		return err
 	}
 	if use {
-		c.db = name
+		c.UseDatabase(name)
 	}
 	return nil
 }
@@ -51,7 +51,7 @@ func (c *Client) UseDatabase(name string) {
 	c.db = name
 }
 
-// DropDatabase drop a Database with via query
+// DropDatabase drop a database with given name via query
 func (c *Client) DropDatabase(name string) error {
 	cmd := fmt.Sprintf("DROP DATABASE %s", name)
 	if _, err := c.queryEx(cmd); err != nil {
